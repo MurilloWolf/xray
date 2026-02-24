@@ -234,12 +234,7 @@ describe('AnalyticsProvider', () => {
     }
 
     const view = render(
-      <AnalyticsProvider
-        appId="app"
-        environment="production"
-        autoPageViews={false}
-        transport="bff"
-      >
+      <AnalyticsProvider appId="app" environment="production" autoPageViews={false} transport="bff">
         <HelperHarness />
       </AnalyticsProvider>,
     );

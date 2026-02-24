@@ -30,7 +30,11 @@ export function runInit(cwd: string): InitResult {
   const routeWrite = writeFileIfMissing(routePath, routeContent);
 
   const envPath = path.join(cwd, '.env.local');
-  const envUrlWrite = upsertEnv(envPath, 'ANALYTICS_INGEST_URL', 'https://ingest.seudominio.com/track');
+  const envUrlWrite = upsertEnv(
+    envPath,
+    'ANALYTICS_INGEST_URL',
+    'https://ingest.seudominio.com/track',
+  );
   const envKeyWrite = upsertEnv(envPath, 'ANALYTICS_INGEST_KEY', 'DEV_SECRET_KEY');
 
   return {

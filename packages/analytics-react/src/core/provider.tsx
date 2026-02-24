@@ -32,7 +32,7 @@ export function AnalyticsProvider({
   );
 
   const sendTrack = useCallback<SendTrack>(
-    (name, props) => {
+    (name, props, tags) => {
       if (typeof window === 'undefined') return;
       const resolvedEnvironment = normalizeEnvironment(environment);
 
@@ -45,6 +45,7 @@ export function AnalyticsProvider({
         environment: resolvedEnvironment,
         ...base,
         props: props ?? undefined,
+        tags: tags ?? undefined,
         writeKey: writeKey ?? undefined,
       };
 
@@ -92,12 +93,14 @@ export function AnalyticsProvider({
     () => ({
       track: sendTrack,
       sendTrack,
-      trackPageView: (props?: TrackProps) => sendTrack('page_view', props),
-      trackClickLink: (props?: TrackProps) => sendTrack('click_link', props),
-      trackRedirect: (props?: TrackProps) => sendTrack('redirect', props),
-      trackClickButton: (props?: TrackProps) => sendTrack('click_button', props),
-      trackScroll: (props?: TrackProps) => sendTrack('scroll', props),
-      trackElementView: (props?: TrackProps) => sendTrack('element_view', props),
+      trackPageView: (props?: TrackProps, tags?: string[]) => sendTrack('page_view', props, tags),
+      trackClickLink: (props?: TrackProps, tags?: string[]) => sendTrack('click_link', props, tags),
+      trackRedirect: (props?: TrackProps, tags?: string[]) => sendTrack('redirect', props, tags),
+      trackClickButton: (props?: TrackProps, tags?: string[]) =>
+        sendTrack('click_button', props, tags),
+      trackScroll: (props?: TrackProps, tags?: string[]) => sendTrack('scroll', props, tags),
+      trackElementView: (props?: TrackProps, tags?: string[]) =>
+        sendTrack('element_view', props, tags),
     }),
     [sendTrack],
   );

@@ -64,6 +64,8 @@ describe('runInit', () => {
   it('throws when neither app nor pages directory exists', () => {
     const dir = createTempDir('xray-cli-invalid-');
 
-    expect(() => runInit(dir)).toThrow('Não encontrei pasta app/ ou pages/. Isso é um projeto Next.js?');
+    expect(() => runInit(dir)).toThrow(
+      'Não encontrei pasta app/ ou pages/. Isso é um projeto Next.js?',
+    );
   });
 });

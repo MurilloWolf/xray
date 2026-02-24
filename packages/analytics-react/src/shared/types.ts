@@ -3,6 +3,7 @@ import type { PropsWithChildren } from 'react';
 export type Transport = 'auto' | 'bff' | 'direct';
 export type AnalyticsEnvironment = 'local' | 'dev' | 'production';
 export type TrackProps = Record<string, unknown>;
+export type TrackTags = string[];
 export type TrackEventName =
   | 'page_view'
   | 'click_link'
@@ -23,17 +24,17 @@ export type AnalyticsProviderProps = PropsWithChildren<{
   debug?: boolean;
 }>;
 
-export type SendTrack = (name: TrackEventName, props?: TrackProps) => void;
+export type SendTrack = (name: TrackEventName, props?: TrackProps, tags?: TrackTags) => void;
 
 export type AnalyticsContextValue = {
   track: SendTrack;
   sendTrack: SendTrack;
-  trackPageView: (props?: TrackProps) => void;
-  trackClickLink: (props?: TrackProps) => void;
-  trackRedirect: (props?: TrackProps) => void;
-  trackClickButton: (props?: TrackProps) => void;
-  trackScroll: (props?: TrackProps) => void;
-  trackElementView: (props?: TrackProps) => void;
+  trackPageView: (props?: TrackProps, tags?: TrackTags) => void;
+  trackClickLink: (props?: TrackProps, tags?: TrackTags) => void;
+  trackRedirect: (props?: TrackProps, tags?: TrackTags) => void;
+  trackClickButton: (props?: TrackProps, tags?: TrackTags) => void;
+  trackScroll: (props?: TrackProps, tags?: TrackTags) => void;
+  trackElementView: (props?: TrackProps, tags?: TrackTags) => void;
 };
 
 export type TrackPageViewProps = {

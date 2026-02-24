@@ -1,9 +1,10 @@
 # Xray
 
-Biblioteca de tracking em monorepo com dois pacotes:
+Biblioteca de tracking em monorepo com três pacotes:
 
 - `@xray/analytics-cli`: CLI para bootstrap de endpoint de tracking em projetos Next.js
 - `@xray/analytics-react`: SDK React para envio de eventos com API explícita
+- `@xray/analytics-server`: SDK backend embutível para validar, mascarar e persistir tracks
 
 ## Objetivo do projeto
 
@@ -20,6 +21,7 @@ A ideia do Xray é facilitar instrumentação de analytics em aplicações React
 packages/
   analytics-cli/    # CLI para iniciar integração no app Next
   analytics-react/  # SDK React para track de eventos
+  analytics-server/ # SDK backend (ingestão, validação e masking)
 ```
 
 ## Requisitos
@@ -165,6 +167,156 @@ export function PricingPage() {
     </>
   );
 }
+```
+
+---
+
+## `@xray/analytics-server`
+
+SDK de backend embutível para processar eventos antes de salvar no banco.
+
+### O que ele resolve
+
+- valida payload base de tracks
+- valida por lista de tracks aceitos + schema (com `zod`)
+- permite rejeitar tracks desconhecidos
+- mascara campos sensíveis antes de persistir
+- funciona com qualquer banco via adapter de storage
+
+### Exemplo: validação de tracks + masking
+
+```ts
+import { z } from 'zod';
+import { createAnalyticsServer, createMemoryAdapter } from '@xray/analytics-server';
+
+const storage = createMemoryAdapter();
+
+const server = createAnalyticsServer({
+  storage,
+  acceptedTracks: [
+    {
+      trackName: 'page_view',
+      schema: z.object({ session_id: z.number() }),
+      validateOn: 'props',
+    },
+    {
+      trackName: 'checkout_started',
+      schema: z.object({ total: z.number(), currency: z.string() }),
+      validateOn: 'props',
+    },
+  ],
+  rejectUnknownTracks: true,
+  masking: {
+    paths: ['user.email', 'card.number'],
+    keyPatterns: [/password/i, /token/i],
+    maskValue: '[masked]',
+  },
+});
+
+const result = await server.ingest({
+  name: 'page_view',
+  appId: 'web-store',
+  props: { session_id: 123 },
+});
+
+if (!result.ok) {
+  console.error(result.error.code, result.error.message);
+}
+```
+
+### Exemplo: handler HTTP estilo `Request`/`Response`
+
+```ts
+import { createFetchIngestHandler } from '@xray/analytics-server';
+
+const handler = createFetchIngestHandler(server);
+
+export async function POST(request: Request) {
+  return handler(request);
+}
+```
+
+### Exemplo: Express adapter
+
+```ts
+import express from 'express';
+import { createExpressIngestHandler } from '@xray/analytics-server';
+
+const app = express();
+app.use(express.json());
+
+const expressHandler = createExpressIngestHandler(server);
+
+app.post('/api/track', (req, res) => {
+  void expressHandler(req, res);
+});
+```
+
+### Exemplo: escolher adapter por configuração
+
+```ts
+import { createIngestHandler } from '@xray/analytics-server';
+
+const fetchHandler = createIngestHandler(server, { adapter: 'fetch' });
+const expressHandler = createIngestHandler(server, {
+  adapter: 'express',
+  express: {
+    getContext: (req) => ({ requestId: req.headers?.['x-request-id'] as string | undefined }),
+  },
+});
+```
+
+### Adapter para banco (Postgres, Mongo, SQLite, etc.)
+
+Você implementa apenas a interface de storage:
+
+```ts
+import type { AnalyticsStorageAdapter, StoredAnalyticsEvent } from '@xray/analytics-server';
+
+const storage: AnalyticsStorageAdapter = {
+  async save(event: StoredAnalyticsEvent) {
+    // salvar no banco de sua escolha
+  },
+  async getAll(dateInit?: number, dateEnd?: number) {
+    // retornar eventos filtrando por ts quando necessário
+    return [];
+  },
+  async clear(dateInit?: number, dateEnd?: number) {
+    // limpar eventos no intervalo e retornar quantidade removida
+    return 0;
+  },
+};
+
+// Postgres (node-postgres / pg)
+import { Pool } from 'pg';
+import { createPostgresAdapter } from '@xray/analytics-server';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+const postgresStorage = createPostgresAdapter({
+  db: pool,
+  schemaName: 'analytics',
+  tableName: 'events',
+});
+
+// Exemplo de tabela:
+// create schema if not exists analytics;
+// create table if not exists analytics.events (
+//   id bigserial primary key,
+//   name text not null,
+//   ts bigint not null,
+//   app_id text not null,
+//   session_id text,
+//   url text,
+//   path text,
+//   ref text,
+//   environment text,
+//   props jsonb not null default '{}'::jsonb,
+//   tags text[],
+//   write_key text,
+//   received_at bigint not null,
+//   meta jsonb
+// );
 ```
 
 ---
