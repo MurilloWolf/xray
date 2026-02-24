@@ -28,13 +28,11 @@ type StoredAnalyticsEventRow = {
   tags: string[] | null;
   write_key: string | null;
   received_at: number;
-  meta:
-    | {
-        ip?: string;
-        userAgent?: string;
-        requestId?: string;
-      }
-    | null;
+  meta: {
+    ip?: string;
+    userAgent?: string;
+    requestId?: string;
+  } | null;
 };
 
 function quoteIdentifier(identifier: string): string {
@@ -162,10 +160,7 @@ export function createPostgresAdapter({
     async clear(dateInit?: number, dateEnd?: number) {
       const { whereClause, values } = buildDateRangeWhereClause(dateInit, dateEnd);
 
-      const result = await db.query(
-        `delete from ${tableRef}${whereClause}`,
-        values,
-      );
+      const result = await db.query(`delete from ${tableRef}${whereClause}`, values);
 
       return extractQueryResultData(result).rowCount ?? 0;
     },

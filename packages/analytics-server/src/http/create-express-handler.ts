@@ -49,7 +49,10 @@ function resolveBody(body: unknown) {
   return body;
 }
 
-export function createExpressIngestHandler(server: Server, options: ExpressIngestHandlerOptions = {}) {
+export function createExpressIngestHandler(
+  server: Server,
+  options: ExpressIngestHandlerOptions = {},
+) {
   return async function handle(req: ExpressLikeRequest, res: ExpressLikeResponse) {
     if ((req.method ?? 'GET').toUpperCase() !== 'POST') {
       return res.status(405).json({ ok: false, error: 'method_not_allowed' });

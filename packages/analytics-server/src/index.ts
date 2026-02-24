@@ -17,9 +17,7 @@ export type {
 } from './types';
 
 export type { PostgresAdapterOptions, PostgresQueryable } from './adapters/postgres-adapter';
-export type {
-  CreateIngestHandlerConfig,
-} from './http/create-ingest-handler';
+export type { CreateIngestHandlerConfig } from './http/create-ingest-handler';
 export type {
   ExpressIngestHandlerOptions,
   ExpressLikeRequest,
