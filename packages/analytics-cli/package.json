@@ -3,6 +3,10 @@
   "version": "0.0.2",
   "private": false,
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "bin": {
     "xray-analytics": "dist/index.js"
   },
