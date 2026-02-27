@@ -1,6 +1,7 @@
 import { applyMasking } from './masking';
 import { validateAgainstAcceptedTracks, validateBasePayload } from './validation';
 import type {
+  AnalyticsTrackCatalog,
   AnalyticsServerConfig,
   IngestContext,
   IngestResult,
@@ -19,6 +20,18 @@ function buildStoredEvent(
     environment?: string;
     props?: Record<string, unknown>;
     tags?: string[];
+    clientMeta?: {
+      ip?: string;
+      userAgent?: string;
+      isMobile?: boolean;
+      os?: string;
+      platform?: string;
+      language?: string;
+      screen?: {
+        width: number;
+        height: number;
+      };
+    };
     writeKey?: string;
   },
   context?: IngestContext,
@@ -38,6 +51,17 @@ function buildStoredEvent(
 
 export function createAnalyticsServer(config: AnalyticsServerConfig) {
   const rejectUnknownTracks = config.rejectUnknownTracks ?? true;
+  const generatedAt = Date.now();
+
+  const trackCatalog = (config.acceptedTracks ?? []).map((track) => ({
+    trackName: track.trackName,
+    validateOn: track.validateOn ?? 'props',
+    version: track.version ?? 1,
+    description: track.description,
+    tags: track.tags,
+    deprecated: track.deprecated,
+    schema: track.catalogSchema,
+  }));
 
   async function ingest(input: unknown, context?: IngestContext): Promise<IngestResult> {
     const payloadValidation = validateBasePayload(input);
@@ -65,14 +89,22 @@ export function createAnalyticsServer(config: AnalyticsServerConfig) {
         ok: false,
         error: {
           code: 'storage_error',
-          message: 'Falha ao persistir track',
+          message: 'Failed to persist track',
           details: error instanceof Error ? error.message : error,
         },
       };
     }
   }
 
+  function getCatalog(): AnalyticsTrackCatalog {
+    return {
+      generatedAt,
+      tracks: [...trackCatalog],
+    };
+  }
+
   return {
     ingest,
+    getCatalog,
   };
 }

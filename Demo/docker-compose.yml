@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: xray-demo-postgres
+    environment:
+      POSTGRES_DB: xray
+      POSTGRES_USER: xray
+      POSTGRES_PASSWORD: xray
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - xray_demo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U xray -d xray']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Demo/backend/Dockerfile
+    container_name: xray-demo-backend
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql://xray:xray@postgres:5432/xray
+      CORS_ORIGIN: http://localhost:5173
+      ANALYTICS_SCHEMA: analytics
+      ANALYTICS_TABLE: events
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '4000:4000'
+
+volumes:
+  xray_demo_postgres_data:

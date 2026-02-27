@@ -14,15 +14,15 @@ export function runCommand(args: string[], cwd: string) {
 
   try {
     const result = runInit(cwd);
-    const routeLabel = result.routeWrite === 'created' ? 'Criado' : 'Já existe';
+    const routeLabel = result.routeWrite === 'created' ? 'Created' : 'Already exists';
 
     console.log(kleur.green(`${routeLabel}: ${path.relative(cwd, result.routePath)}`));
-    console.log(kleur.green(`Atualizado: ${path.relative(cwd, result.envPath)}`));
-    console.log('\nPronto! Use <AnalyticsProvider transport="bff" /> com endpoint "/api/track".');
+    console.log(kleur.green(`Updated: ${path.relative(cwd, result.envPath)}`));
+    console.log('\nDone! Use <AnalyticsProvider transport="bff" /> with endpoint "/api/track".');
 
     return 0;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro inesperado';
+    const message = error instanceof Error ? error.message : 'Unexpected error';
     console.log(kleur.red(message));
     return 1;
   }

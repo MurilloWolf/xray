@@ -313,6 +313,7 @@ const postgresStorage = createPostgresAdapter({
 //   environment text,
 //   props jsonb not null default '{}'::jsonb,
 //   tags text[],
+//   client_meta jsonb,
 //   write_key text,
 //   received_at bigint not null,
 //   meta jsonb

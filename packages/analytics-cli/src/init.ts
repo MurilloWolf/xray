@@ -13,18 +13,23 @@ export type InitResult = {
 };
 
 export function runInit(cwd: string): InitResult {
-  const hasApp = exists(path.join(cwd, 'app'));
-  const hasPages = exists(path.join(cwd, 'pages'));
+  const hasRootApp = exists(path.join(cwd, 'app'));
+  const hasRootPages = exists(path.join(cwd, 'pages'));
+  const hasSrcApp = exists(path.join(cwd, 'src', 'app'));
+  const hasSrcPages = exists(path.join(cwd, 'src', 'pages'));
 
-  if (!hasApp && !hasPages) {
-    throw new Error('Não encontrei pasta app/ ou pages/. Isso é um projeto Next.js?');
+  if (!hasRootApp && !hasRootPages && !hasSrcApp && !hasSrcPages) {
+    throw new Error(
+      'Could not find app/ or pages/ directory (or src/app or src/pages). Is this a Next.js project?',
+    );
   }
 
-  const mode: 'app' | 'pages' = hasApp ? 'app' : 'pages';
+  const sourceRoot = hasRootApp || hasRootPages ? cwd : path.join(cwd, 'src');
+  const mode: 'app' | 'pages' = hasRootApp || hasSrcApp ? 'app' : 'pages';
   const routePath =
     mode === 'app'
-      ? path.join(cwd, 'app', 'api', 'track', 'route.ts')
-      : path.join(cwd, 'pages', 'api', 'track.ts');
+      ? path.join(sourceRoot, 'app', 'api', 'track', 'route.ts')
+      : path.join(sourceRoot, 'pages', 'api', 'track.ts');
 
   const routeContent = mode === 'app' ? appRouteTemplate() : pagesRouteTemplate();
   const routeWrite = writeFileIfMissing(routePath, routeContent);

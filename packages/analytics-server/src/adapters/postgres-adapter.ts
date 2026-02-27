@@ -26,6 +26,18 @@ type StoredAnalyticsEventRow = {
   environment: string | null;
   props: Record<string, unknown> | null;
   tags: string[] | null;
+  client_meta: {
+    ip?: string;
+    userAgent?: string;
+    isMobile?: boolean;
+    os?: string;
+    platform?: string;
+    language?: string;
+    screen?: {
+      width: number;
+      height: number;
+    };
+  } | null;
   write_key: string | null;
   received_at: number;
   meta: {
@@ -37,7 +49,7 @@ type StoredAnalyticsEventRow = {
 
 function quoteIdentifier(identifier: string): string {
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(identifier)) {
-    throw new Error(`Identificador SQL inválido: '${identifier}'`);
+    throw new Error(`Invalid SQL identifier: '${identifier}'`);
   }
   return `"${identifier}"`;
 }
@@ -78,6 +90,7 @@ function mapRowToStoredEvent(row: StoredAnalyticsEventRow): StoredAnalyticsEvent
     environment: row.environment ?? undefined,
     props: row.props ?? {},
     tags: row.tags ?? undefined,
+    clientMeta: row.client_meta ?? undefined,
     writeKey: row.write_key ?? undefined,
     receivedAt: row.received_at,
     meta: row.meta ?? undefined,
@@ -106,9 +119,9 @@ export function createPostgresAdapter({
       await db.query(
         `
           insert into ${tableRef}
-            (name, ts, app_id, session_id, url, path, ref, environment, props, tags, write_key, received_at, meta)
+            (name, ts, app_id, session_id, url, path, ref, environment, props, tags, client_meta, write_key, received_at, meta)
           values
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::text[], $11, $12, $13::jsonb)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::text[], $11::jsonb, $12, $13, $14::jsonb)
         `,
         [
           event.name,
@@ -121,6 +134,7 @@ export function createPostgresAdapter({
           event.environment ?? null,
           event.props,
           event.tags ?? null,
+          event.clientMeta ?? null,
           event.writeKey ?? null,
           event.receivedAt,
           event.meta ?? null,
@@ -144,6 +158,7 @@ export function createPostgresAdapter({
             environment,
             props,
             tags,
+            client_meta,
             write_key,
             received_at,
             meta

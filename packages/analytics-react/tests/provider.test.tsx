@@ -61,12 +61,16 @@ function TrackHarness({
 }
 
 describe('AnalyticsProvider', () => {
+  const originalFetch = global.fetch;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = vi.fn();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    global.fetch = originalFetch;
   });
 
   it('logs only in local environment and does not send network request', async () => {
@@ -251,6 +255,106 @@ describe('AnalyticsProvider', () => {
       2,
       '/api/track',
       expect.stringContaining('"name":"element_view"'),
+    );
+
+    view.unmount();
+  });
+
+  it('blocks unknown track names when strictCatalog is enabled', async () => {
+    sendBeaconFirstMock.mockResolvedValue({ ok: true, status: 200 });
+    let trackFn: ReturnType<typeof useAnalytics>['track'] | null = null;
+
+    const view = render(
+      <AnalyticsProvider
+        appId="app"
+        environment="production"
+        autoPageViews={false}
+        transport="bff"
+        strictCatalog
+        catalog={[{ trackName: 'page_view' }]}
+      >
+        <TrackHarness onReady={(track) => (trackFn = track)} />
+      </AnalyticsProvider>,
+    );
+
+    act(() => {
+      trackFn?.('checkout_started', { total: 100 });
+    });
+    await flushPromises();
+
+    expect(sendBeaconFirstMock).not.toHaveBeenCalled();
+
+    view.unmount();
+  });
+
+  it('loads catalog from endpoint and allows mapped track names', async () => {
+    sendBeaconFirstMock.mockResolvedValue({ ok: true, status: 200 });
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        data: {
+          tracks: [{ trackName: 'checkout_started' }],
+        },
+      }),
+    });
+
+    let trackFn: ReturnType<typeof useAnalytics>['track'] | null = null;
+
+    const view = render(
+      <AnalyticsProvider
+        appId="app"
+        environment="production"
+        autoPageViews={false}
+        transport="bff"
+        catalogEndpoint="/api/catalog"
+        strictCatalog
+      >
+        <TrackHarness onReady={(track) => (trackFn = track)} />
+      </AnalyticsProvider>,
+    );
+
+    await flushPromises();
+
+    act(() => {
+      trackFn?.('checkout_started', { total: 100 });
+    });
+    await flushPromises();
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/catalog', {
+      method: 'GET',
+      cache: 'no-store',
+    });
+    expect(sendBeaconFirstMock).toHaveBeenCalledTimes(1);
+
+    view.unmount();
+  });
+
+  it('captures default client metadata when metadata is enabled', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    let trackFn: ReturnType<typeof useAnalytics>['track'] | null = null;
+
+    const view = render(
+      <AnalyticsProvider appId="app" environment="local" autoPageViews={false} metadata>
+        <TrackHarness onReady={(track) => (trackFn = track)} />
+      </AnalyticsProvider>,
+    );
+
+    act(() => {
+      trackFn?.('page_view');
+    });
+
+    await flushPromises();
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      '[xray][track]',
+      expect.objectContaining({
+        clientMeta: expect.objectContaining({
+          userAgent: expect.any(String),
+          isMobile: expect.any(Boolean),
+          os: expect.any(String),
+        }),
+      }),
     );
 
     view.unmount();

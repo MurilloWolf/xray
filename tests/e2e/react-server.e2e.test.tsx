@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import {
   createAnalyticsServer,
+  createFetchCatalogHandler,
   createFetchIngestHandler,
   createMemoryAdapter,
 } from '../../packages/analytics-server/src';
@@ -134,13 +135,13 @@ function render(ui: React.ReactElement) {
   };
 }
 
-async function waitFor(assertion: () => void, timeoutMs = 3000, intervalMs = 25) {
+async function waitFor(assertion: () => void | Promise<void>, timeoutMs = 3000, intervalMs = 25) {
   const start = Date.now();
   let lastError: unknown;
 
   while (Date.now() - start < timeoutMs) {
     try {
-      assertion();
+      await assertion();
       return;
     } catch (error) {
       lastError = error;
@@ -210,11 +211,11 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(1);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(1);
     });
 
-    const stored = storage.getAll()[0];
+    const stored = (await storage.getAll())[0];
     expect(stored?.name).toBe('page_view');
     expect(stored?.props.session_id).toBe(123);
 
@@ -254,8 +255,8 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(1);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(1);
     });
 
     clickView.unmount();
@@ -272,12 +273,12 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(2);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(2);
     });
 
-    expect(storage.getAll()[0]?.name).toBe('click_button');
-    expect(storage.getAll()[1]?.name).toBe('element_view');
+    expect((await storage.getAll())[0]?.name).toBe('click_button');
+    expect((await storage.getAll())[1]?.name).toBe('element_view');
 
     viewTrack.unmount();
   });
@@ -311,12 +312,12 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(1);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(1);
     });
 
-    expect(storage.getAll()[0]?.name).toBe('custom_checkout_step');
-    expect(storage.getAll()[0]?.props.step).toBe(2);
+    expect((await storage.getAll())[0]?.name).toBe('custom_checkout_step');
+    expect((await storage.getAll())[0]?.props.step).toBe(2);
 
     view.unmount();
   });
@@ -351,12 +352,12 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(1);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(1);
     });
 
     expect((secondaryServer as RunningStatusServer).getHits()).toBeGreaterThan(0);
-    expect(storage.getAll()[0]?.props.session_id).toBe(77);
+    expect((await storage.getAll())[0]?.props.session_id).toBe(77);
 
     view.unmount();
   });
@@ -390,8 +391,8 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(0);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(0);
     });
 
     view.unmount();
@@ -426,8 +427,8 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(0);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(0);
     });
 
     view.unmount();
@@ -479,14 +480,64 @@ describe('E2E: analytics-react -> analytics-server', () => {
       </AnalyticsProvider>,
     );
 
-    await waitFor(() => {
-      expect(storage.getAll()).toHaveLength(1);
+    await waitFor(async () => {
+      expect(await storage.getAll()).toHaveLength(1);
     });
 
-    expect(storage.getAll()[0]?.props.user).toEqual({
+    expect((await storage.getAll())[0]?.props.user).toEqual({
       email: '[masked]',
       password: '[masked]',
     });
+
+    view.unmount();
+  });
+
+  it('blocks unknown tracks in strict catalog mode before ingest', async () => {
+    const storage = createMemoryAdapter();
+    const server = createAnalyticsServer({
+      storage,
+      acceptedTracks: [
+        {
+          trackName: 'page_view',
+          schema: z.object({ session_id: z.number() }),
+          validateOn: 'props',
+          catalogSchema: {
+            type: 'object',
+            properties: {
+              session_id: { type: 'number' },
+            },
+          },
+        },
+      ],
+      rejectUnknownTracks: true,
+    });
+
+    const ingestHandler = createFetchIngestHandler(server);
+    const catalogHandler = createFetchCatalogHandler(server);
+    runningServer = await startTestServer(async (request) => {
+      if (new URL(request.url).pathname === '/api/catalog') {
+        return catalogHandler(request);
+      }
+
+      return ingestHandler(request);
+    });
+
+    const view = render(
+      <AnalyticsProvider
+        appId="e2e-app"
+        environment="production"
+        transport="direct"
+        directEndpoint={`${runningServer.baseUrl}/api/track`}
+        catalogEndpoint={`${runningServer.baseUrl}/api/catalog`}
+        strictCatalog
+        autoPageViews={false}
+      >
+        <TrackOnMount eventName="unknown_event" props={{ any: true }} />
+      </AnalyticsProvider>,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    await expect(storage.getAll()).resolves.toHaveLength(0);
 
     view.unmount();
   });
@@ -528,7 +579,7 @@ describe('E2E: analytics-react -> analytics-server', () => {
       );
     });
 
-    expect(storage.getAll()).toHaveLength(0);
+    expect(await storage.getAll()).toHaveLength(0);
 
     view.unmount();
     consoleSpy.mockRestore();
@@ -571,7 +622,7 @@ describe('E2E: analytics-react -> analytics-server', () => {
       );
     });
 
-    expect(storage.getAll()).toHaveLength(0);
+    expect(await storage.getAll()).toHaveLength(0);
 
     view.unmount();
     consoleSpy.mockRestore();

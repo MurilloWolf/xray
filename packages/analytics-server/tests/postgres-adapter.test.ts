@@ -14,6 +14,11 @@ const sampleEvent: StoredAnalyticsEvent = {
   environment: 'production',
   props: { plan: 'pro' },
   tags: ['marketing', 'pricing'],
+  clientMeta: {
+    userAgent: 'Mozilla/5.0',
+    isMobile: false,
+    os: 'macos',
+  },
   writeKey: 'secret-key',
   receivedAt: 1730000000010,
   meta: {
@@ -47,6 +52,7 @@ describe('createPostgresAdapter', () => {
       sampleEvent.environment,
       sampleEvent.props,
       sampleEvent.tags,
+      sampleEvent.clientMeta,
       sampleEvent.writeKey,
       sampleEvent.receivedAt,
       sampleEvent.meta,
@@ -73,7 +79,7 @@ describe('createPostgresAdapter', () => {
         db: { query: vi.fn() },
         tableName: 'events;drop table users;',
       }),
-    ).toThrowError(/Identificador SQL inválido/);
+    ).toThrowError(/Invalid SQL identifier/);
   });
 
   it('returns stored events with getAll', async () => {
@@ -90,6 +96,7 @@ describe('createPostgresAdapter', () => {
           environment: sampleEvent.environment,
           props: sampleEvent.props,
           tags: sampleEvent.tags,
+          client_meta: sampleEvent.clientMeta,
           write_key: sampleEvent.writeKey,
           received_at: sampleEvent.receivedAt,
           meta: sampleEvent.meta,

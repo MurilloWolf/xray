@@ -13,6 +13,22 @@ const baseEventSchema = z.object({
   environment: z.string().optional(),
   props: z.record(z.string(), z.unknown()).optional(),
   tags: z.array(z.string()).optional(),
+  clientMeta: z
+    .object({
+      ip: z.string().optional(),
+      userAgent: z.string().optional(),
+      isMobile: z.boolean().optional(),
+      os: z.string().optional(),
+      platform: z.string().optional(),
+      language: z.string().optional(),
+      screen: z
+        .object({
+          width: z.number(),
+          height: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
   writeKey: z.string().optional(),
 });
 
@@ -23,7 +39,7 @@ export function validateBasePayload(input: unknown) {
       ok: false,
       error: {
         code: 'invalid_payload',
-        message: 'Payload de track inválido',
+        message: 'Invalid track payload',
         details: parsed.error.issues,
       },
     } satisfies IngestResult;
@@ -47,7 +63,7 @@ export function validateAgainstAcceptedTracks(
       ok: false,
       error: {
         code: 'track_not_allowed',
-        message: `Track '${event.name}' não está na lista de tracks permitidos`,
+        message: `Track '${event.name}' is not in the allowed track list`,
       },
     };
   }
@@ -60,7 +76,7 @@ export function validateAgainstAcceptedTracks(
       ok: false,
       error: {
         code: 'schema_mismatch',
-        message: `Track '${event.name}' não bate com schema configurado`,
+        message: `Track '${event.name}' does not match the configured schema`,
         details: parsed.error.issues,
       },
     };

@@ -1,6 +1,6 @@
 {
   "name": "@xray/analytics-react",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -17,7 +17,7 @@
   ],
   "sideEffects": false,
   "peerDependencies": {
-    "react": "^19.2.4"
+    "react": ">=19 <20"
   },
   "scripts": {
     "build": "tsup src/index.tsx --format cjs,esm --dts",

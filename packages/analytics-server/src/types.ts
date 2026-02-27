@@ -13,6 +13,18 @@ export type AnalyticsEventInput = {
   environment?: string;
   props?: AnalyticsEventProps;
   tags?: string[];
+  clientMeta?: {
+    ip?: string;
+    userAgent?: string;
+    isMobile?: boolean;
+    os?: string;
+    platform?: string;
+    language?: string;
+    screen?: {
+      width: number;
+      height: number;
+    };
+  };
   writeKey?: string;
 };
 
@@ -58,6 +70,26 @@ export type AcceptedTrack = {
   trackName: string;
   schema: ZodType;
   validateOn?: 'props' | 'event';
+  version?: number;
+  description?: string;
+  tags?: string[];
+  deprecated?: boolean;
+  catalogSchema?: Record<string, unknown>;
+};
+
+export type AnalyticsTrackCatalogItem = {
+  trackName: string;
+  validateOn: 'props' | 'event';
+  version: number;
+  description?: string;
+  tags?: string[];
+  deprecated?: boolean;
+  schema?: Record<string, unknown>;
+};
+
+export type AnalyticsTrackCatalog = {
+  generatedAt: number;
+  tracks: AnalyticsTrackCatalogItem[];
 };
 
 export type AnalyticsServerConfig = {

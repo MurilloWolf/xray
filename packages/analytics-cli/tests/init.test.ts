@@ -49,6 +49,34 @@ describe('runInit', () => {
     );
   });
 
+  it('creates app router tracking route when src/app exists', () => {
+    const dir = createTempDir('xray-cli-src-app-');
+    fs.mkdirSync(path.join(dir, 'src', 'app'), { recursive: true });
+
+    const result = runInit(dir);
+
+    expect(result.mode).toBe('app');
+    expect(result.routeWrite).toBe('created');
+    expect(fs.existsSync(path.join(dir, 'src', 'app', 'api', 'track', 'route.ts'))).toBe(true);
+    expect(
+      fs.readFileSync(path.join(dir, 'src', 'app', 'api', 'track', 'route.ts'), 'utf8'),
+    ).toContain('NextResponse');
+  });
+
+  it('creates pages router tracking route when src/pages exists', () => {
+    const dir = createTempDir('xray-cli-src-pages-');
+    fs.mkdirSync(path.join(dir, 'src', 'pages'), { recursive: true });
+
+    const result = runInit(dir);
+
+    expect(result.mode).toBe('pages');
+    expect(result.routeWrite).toBe('created');
+    expect(fs.existsSync(path.join(dir, 'src', 'pages', 'api', 'track.ts'))).toBe(true);
+    expect(fs.readFileSync(path.join(dir, 'src', 'pages', 'api', 'track.ts'), 'utf8')).toContain(
+      'NextApiRequest',
+    );
+  });
+
   it('upserts required env keys', () => {
     const dir = createTempDir('xray-cli-env-');
     fs.mkdirSync(path.join(dir, 'app'));
@@ -65,7 +93,7 @@ describe('runInit', () => {
     const dir = createTempDir('xray-cli-invalid-');
 
     expect(() => runInit(dir)).toThrow(
-      'Não encontrei pasta app/ ou pages/. Isso é um projeto Next.js?',
+      'Could not find app/ or pages/ directory (or src/app or src/pages). Is this a Next.js project?',
     );
   });
 });
