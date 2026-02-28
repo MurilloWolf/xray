@@ -11,7 +11,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 
-import { AnalyticsProvider, useAnalytics } from '@xray/analytics-react';
+import { AnalyticsProvider, useAnalytics } from '@xray-analytics/analytics-react';
 
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';

@@ -2,9 +2,9 @@
 
 Biblioteca de tracking em monorepo com três pacotes:
 
-- `@xray/analytics-cli`: CLI para bootstrap de endpoint de tracking em projetos Next.js
-- `@xray/analytics-react`: SDK React para envio de eventos com API explícita
-- `@xray/analytics-server`: SDK backend embutível para validar, mascarar e persistir tracks
+- `@xray-analytics/analytics-cli`: CLI para bootstrap de endpoint de tracking em projetos Next.js
+- `@xray-analytics/analytics-react`: SDK React para envio de eventos com API explícita
+- `@xray-analytics/analytics-server`: SDK backend embutível para validar, mascarar e persistir tracks
 
 ## Objetivo do projeto
 
@@ -42,7 +42,7 @@ npm run build
 
 ---
 
-## `@xray/analytics-cli`
+## `@xray-analytics/analytics-cli`
 
 CLI para preparar o endpoint de tracking no Next.js e configurar variáveis de ambiente.
 
@@ -75,7 +75,7 @@ Depois disso, o app já fica pronto para receber eventos via `transport="bff"` n
 
 ---
 
-## `@xray/analytics-react`
+## `@xray-analytics/analytics-react`
 
 SDK React para instrumentar eventos com controle explícito.
 
@@ -99,7 +99,7 @@ SDK React para instrumentar eventos com controle explícito.
 ## Exemplo básico (Provider + hooks)
 
 ```tsx
-import { AnalyticsProvider, useAnalytics } from '@xray/analytics-react';
+import { AnalyticsProvider, useAnalytics } from '@xray-analytics/analytics-react';
 
 function BuyButton() {
   const { trackClickButton } = useAnalytics();
@@ -136,7 +136,7 @@ export function App() {
 ## Exemplo com evento customizado
 
 ```tsx
-import { useAnalytics } from '@xray/analytics-react';
+import { useAnalytics } from '@xray-analytics/analytics-react';
 
 function Checkout() {
   const { track } = useAnalytics();
@@ -157,7 +157,7 @@ function Checkout() {
 ## Exemplo de Page View explícita
 
 ```tsx
-import { TrackPageView } from '@xray/analytics-react';
+import { TrackPageView } from '@xray-analytics/analytics-react';
 
 export function PricingPage() {
   return (
@@ -171,7 +171,7 @@ export function PricingPage() {
 
 ---
 
-## `@xray/analytics-server`
+## `@xray-analytics/analytics-server`
 
 SDK de backend embutível para processar eventos antes de salvar no banco.
 
@@ -187,7 +187,7 @@ SDK de backend embutível para processar eventos antes de salvar no banco.
 
 ```ts
 import { z } from 'zod';
-import { createAnalyticsServer, createMemoryAdapter } from '@xray/analytics-server';
+import { createAnalyticsServer, createMemoryAdapter } from '@xray-analytics/analytics-server';
 
 const storage = createMemoryAdapter();
 
@@ -227,7 +227,7 @@ if (!result.ok) {
 ### Exemplo: handler HTTP estilo `Request`/`Response`
 
 ```ts
-import { createFetchIngestHandler } from '@xray/analytics-server';
+import { createFetchIngestHandler } from '@xray-analytics/analytics-server';
 
 const handler = createFetchIngestHandler(server);
 
@@ -240,7 +240,7 @@ export async function POST(request: Request) {
 
 ```ts
 import express from 'express';
-import { createExpressIngestHandler } from '@xray/analytics-server';
+import { createExpressIngestHandler } from '@xray-analytics/analytics-server';
 
 const app = express();
 app.use(express.json());
@@ -255,7 +255,7 @@ app.post('/api/track', (req, res) => {
 ### Exemplo: escolher adapter por configuração
 
 ```ts
-import { createIngestHandler } from '@xray/analytics-server';
+import { createIngestHandler } from '@xray-analytics/analytics-server';
 
 const fetchHandler = createIngestHandler(server, { adapter: 'fetch' });
 const expressHandler = createIngestHandler(server, {
@@ -271,7 +271,7 @@ const expressHandler = createIngestHandler(server, {
 Você implementa apenas a interface de storage:
 
 ```ts
-import type { AnalyticsStorageAdapter, StoredAnalyticsEvent } from '@xray/analytics-server';
+import type { AnalyticsStorageAdapter, StoredAnalyticsEvent } from '@xray-analytics/analytics-server';
 
 const storage: AnalyticsStorageAdapter = {
   async save(event: StoredAnalyticsEvent) {
@@ -289,7 +289,7 @@ const storage: AnalyticsStorageAdapter = {
 
 // Postgres (node-postgres / pg)
 import { Pool } from 'pg';
-import { createPostgresAdapter } from '@xray/analytics-server';
+import { createPostgresAdapter } from '@xray-analytics/analytics-server';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 

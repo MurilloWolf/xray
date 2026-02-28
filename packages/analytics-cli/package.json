@@ -1,5 +1,5 @@
 {
-  "name": "@xray/analytics-cli",
+  "name": "@xray-analytics/analytics-cli",
   "version": "0.0.2",
   "private": false,
   "type": "module",

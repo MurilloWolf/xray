@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@xray/analytics-react': path.resolve(
+      '@xray-analytics/analytics-react': path.resolve(
         __dirname,
         '../../packages/analytics-react/src/index.tsx',
       ),

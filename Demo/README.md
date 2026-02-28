@@ -2,7 +2,7 @@
 
 Um playground real para testar o ecossistema de analytics do XRay em ponta a ponta:
 
-- frontend React consumindo `@xray/analytics-react`
+- frontend React consumindo `@xray-analytics/analytics-react`
 - backend Express consumindo `analytics-server`
 - persistência em Postgres
 - catálogo de eventos com validação de schema
@@ -181,7 +181,7 @@ curl -X DELETE "http://localhost:4000/api/tracks?dateInit=1730000000000&dateEnd=
 Exemplo mínimo equivalente ao demo:
 
 ```tsx
-import { AnalyticsProvider, useAnalytics } from '@xray/analytics-react';
+import { AnalyticsProvider, useAnalytics } from '@xray-analytics/analytics-react';
 
 function Page() {
   const { trackClickButton } = useAnalytics();

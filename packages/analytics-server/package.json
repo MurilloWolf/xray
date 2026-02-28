@@ -1,5 +1,5 @@
 {
-  "name": "@xray/analytics-server",
+  "name": "@xray-analytics/analytics-server",
   "version": "0.0.2",
   "private": false,
   "main": "dist/index.js",

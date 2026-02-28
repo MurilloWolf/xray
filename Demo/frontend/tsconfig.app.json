@@ -11,7 +11,7 @@
     "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {
-      "@xray/analytics-react": ["../../packages/analytics-react/src/index.tsx"]
+      "@xray-analytics/analytics-react": ["../../packages/analytics-react/src/index.tsx"]
     }
   },
   "include": ["src"]
